@@ -40,8 +40,10 @@ func main() {
 		return f.Handle(ctx, update)
 	})
 
+	sessionPath := prepareSessionPath(cfg.sessionPath)
+
 	client := telegram.NewClient(cfg.apiID, cfg.apiHash, telegram.Options{
-		SessionStorage: &session.FileStorage{Path: cfg.sessionPath},
+		SessionStorage: &session.FileStorage{Path: sessionPath},
 		UpdateHandler:  dispatcher,
 	})
 
@@ -104,4 +106,32 @@ func main() {
 	if err != nil && !errors.Is(err, context.Canceled) {
 		log.Fatalf("run: %v", err)
 	}
+}
+
+func prepareSessionPath(path string) string {
+	info, err := os.Stat(path)
+	if err != nil {
+		log.Printf("session file check: %s does not exist or cannot be read: %v", path, err)
+		return path
+	}
+	log.Printf("session file found at %s (size=%d bytes)", path, info.Size())
+
+	// If the file is inside /etc/secrets (which is mounted read-only on Render),
+	// copy it to /tmp/session.json so gotd can open and update it if needed.
+	if strings.HasPrefix(path, "/etc/secrets/") {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			log.Printf("failed to read secret session %s: %v", path, err)
+			return path
+		}
+		targetPath := "/tmp/session.json"
+		if err := os.WriteFile(targetPath, data, 0600); err != nil {
+			log.Printf("failed to copy session to %s: %v", targetPath, err)
+			return path
+		}
+		log.Printf("copied read-only session to writable %s", targetPath)
+		return targetPath
+	}
+
+	return path
 }
