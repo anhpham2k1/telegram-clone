@@ -47,9 +47,9 @@ func main() {
 		UpdateHandler:  dispatcher,
 	})
 
-	// Start health server immediately so Render's port check passes.
-	healthSrv := newHealthServer(cfg.healthPort, &active)
-	healthSrv.Start()
+	// Start minimal ping server immediately so Render's port check passes.
+	pingSrv := newPingServer(cfg.healthPort)
+	pingSrv.Start()
 
 	authenticator := newTerminalAuth(cfg.phone, cfg.password)
 	err = client.Run(ctx, func(ctx context.Context) error {
@@ -62,9 +62,7 @@ func main() {
 		if err != nil {
 			return fmt.Errorf("get current account: %w", err)
 		}
-		name := strings.TrimSpace(self.FirstName + " " + self.LastName)
-		log.Printf("logged in as %s (id=%d)", name, self.ID)
-		healthSrv.SetSelf(name)
+		log.Printf("logged in as %s (id=%d)", strings.TrimSpace(self.FirstName+" "+self.LastName), self.ID)
 
 		source, err := resolveChannel(ctx, client.API(), cfg.source)
 		if err != nil {
