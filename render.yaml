@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: clone-tin-tuc
+    runtime: docker
+    healthCheckPath: /ping
+    envVars:
+      - key: TG_API_ID
+        sync: false
+      - key: TG_API_HASH
+        sync: false
+      - key: TG_PHONE
+        sync: false
+      - key: TG_PASSWORD
+        sync: false
+      - key: TG_SOURCE
+        sync: false
+      - key: TG_TARGET
+        sync: false
+      - key: TG_SESSION
+        value: /etc/secrets/session.json
+      - key: TG_BACKFILL
+        value: "0"
+      - key: TG_KEEP_AUTHOR
+        value: "false"
+      - key: TG_AUTO_JOIN
+        value: "true"
